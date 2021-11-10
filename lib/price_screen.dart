@@ -11,7 +11,28 @@ class PriceScreen extends StatefulWidget {
 }
 
 class _PriceScreenState extends State<PriceScreen> {
-  String selectedCurrency = currenciesList.first;
+  Map<String, Map<String, String>> exchangeRate = {};
+  String? selectedCurrency = currenciesList.first;
+
+  @override
+  void initState() {
+    super.initState();
+    CoinData coinData = CoinData();
+    coinData.retrieveRates().then((value) {
+      print('HERE');
+      setState(() {
+        cryptoList.forEach((crypto) {
+          final Map<String, String> cryptoExchangeRate = {};
+          exchangeRate[crypto] = cryptoExchangeRate;
+          currenciesList.forEach((currency) {
+            cryptoExchangeRate[currency] =
+                coinData.getConversion(crypto, currency)?.toStringAsFixed(4) ??
+                    '?';
+          });
+        });
+      });
+    });
+  }
 
   DropdownButton<String> getDropdownButton() {
     return DropdownButton<String>(
@@ -33,7 +54,9 @@ class _PriceScreenState extends State<PriceScreen> {
       backgroundColor: Colors.lightBlue,
       itemExtent: 32.0,
       onSelectedItemChanged: (selectedIndex) {
-        selectedCurrency = currenciesList[selectedIndex];
+        setState(() {
+          selectedCurrency = currenciesList[selectedIndex];
+        });
       },
       children: currenciesList.map((currency) => Text(currency)).toList(),
     );
@@ -49,26 +72,32 @@ class _PriceScreenState extends State<PriceScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Padding(
-            padding: EdgeInsets.fromLTRB(18.0, 18.0, 18.0, 0),
-            child: Card(
-              color: Colors.lightBlueAccent,
-              elevation: 5.0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10.0),
-              ),
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 28.0),
-                child: Text(
-                  '1 BTC = ? USD',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 20.0,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: cryptoList
+                .map((crypto) => Padding(
+                      padding: EdgeInsets.fromLTRB(18.0, 18.0, 18.0, 0),
+                      child: Card(
+                        color: Colors.lightBlueAccent,
+                        elevation: 5.0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10.0),
+                        ),
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                              vertical: 15.0, horizontal: 28.0),
+                          child: Text(
+                            '1 $crypto = ${exchangeRate[crypto]?[selectedCurrency]} $selectedCurrency',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 20.0,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ))
+                .toList(),
           ),
           Container(
             height: 150.0,
